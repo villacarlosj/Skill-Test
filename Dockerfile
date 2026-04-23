@@ -8,10 +8,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libpq-dev \
         libzip-dev \
         libicu-dev \
+        libonig-dev \
+        libxml2-dev \
         unzip \
         git \
         curl \
-    && docker-php-ext-install pdo pdo_pgsql zip intl \
+    && docker-php-ext-install \
+        pdo \
+        pdo_pgsql \
+        zip \
+        intl \
+        mbstring \
+        bcmath \
+        xml \
     && rm -rf /var/lib/apt/lists/*
 
 # Node.js 22 LTS
