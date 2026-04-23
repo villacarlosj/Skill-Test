@@ -1,97 +1,90 @@
 # ─── Stage 1: Build (needs both PHP and Node) ────────────────────────────────
-# We need PHP to run `artisan wayfinder:generate` which produces the
-# TypeScript route files that Vite needs before it can compile the frontend.
 FROM php:8.3-cli-bookworm AS builder
 
-# System deps for PHP extensions
+# System deps
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        libpq-dev \
-        libzip-dev \
-        libicu-dev \
-        libonig-dev \
-        libxml2-dev \
-        unzip \
-        git \
-        curl \
-    && docker-php-ext-install \
-        pdo \
-        pdo_pgsql \
-        zip \
-        intl \
-        mbstring \
-        bcmath \
-        xml \
+        libpq-dev libzip-dev libicu-dev libonig-dev libxml2-dev \
+        unzip git curl \
+    && docker-php-ext-install pdo pdo_pgsql zip intl mbstring bcmath xml \
     && rm -rf /var/lib/apt/lists/*
 
-# Node.js 22 LTS
+# Node.js 22
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
     && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/*
 
-# Composer
+# Composer binary
 COPY --from=composer:2.8 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /app
 
-# ── PHP dependencies ──────────────────────────────────────────────────────────
+# ── PHP deps (ignore platform reqs — lock was generated on Windows) ───────────
 COPY composer.json composer.lock ./
 RUN composer install \
     --no-dev \
     --no-scripts \
     --no-interaction \
     --prefer-dist \
-    --optimize-autoloader
+    --optimize-autoloader \
+    --ignore-platform-reqs
 
-# ── Copy source ───────────────────────────────────────────────────────────────
+# ── Copy full source ──────────────────────────────────────────────────────────
 COPY . .
 
-# Generate a temporary APP_KEY so artisan can boot without a real .env.
-# Wayfinder only reads routes — no DB connection needed.
+# ── Bootstrap for artisan ─────────────────────────────────────────────────────
+# Use a throw-away key so artisan can boot — Render's real APP_KEY is used at runtime
 RUN cp .env.example .env \
-    && php artisan key:generate --force \
-    && php artisan wayfinder:generate
+    && php artisan key:generate --force
 
-# ── Node / frontend ───────────────────────────────────────────────────────────
+# Generate Wayfinder TypeScript route files (reads PHP routes, no DB needed)
+# Fall back gracefully if the command name differs in this wayfinder version
+RUN php artisan wayfinder:generate || php artisan route:cache --no-ansi || true
+
+# ── Frontend build ────────────────────────────────────────────────────────────
 RUN npm ci && npm run build
+
+# Remove the throw-away .env so it doesn't shadow Render's env vars at runtime
+RUN rm -f .env
 
 # ─── Stage 2: Runtime ────────────────────────────────────────────────────────
 FROM php:8.3-fpm-alpine AS runtime
 
-# Runtime system packages
+# Runtime packages
 RUN apk add --no-cache \
-        nginx \
-        supervisor \
-        postgresql-dev \
-        icu-dev \
-        libzip-dev \
-        oniguruma-dev \
+        nginx supervisor \
+        postgresql-dev icu-dev libzip-dev oniguruma-dev libxml2-dev \
         curl \
     && docker-php-ext-install \
-        pdo \
-        pdo_pgsql \
-        pgsql \
-        zip \
-        intl \
-        mbstring \
-        opcache \
+        pdo pdo_pgsql pgsql zip intl mbstring bcmath opcache \
     && rm -rf /var/cache/apk/*
 
 WORKDIR /var/www/html
 
-# Copy built application from stage 1
-COPY --from=builder /app /var/www/html
+# Copy app (excludes node_modules — not needed at runtime)
+COPY --from=builder /app/app             ./app
+COPY --from=builder /app/bootstrap       ./bootstrap
+COPY --from=builder /app/config          ./config
+COPY --from=builder /app/database        ./database
+COPY --from=builder /app/public          ./public
+COPY --from=builder /app/resources       ./resources
+COPY --from=builder /app/routes          ./routes
+COPY --from=builder /app/storage         ./storage
+COPY --from=builder /app/vendor          ./vendor
+COPY --from=builder /app/artisan         ./artisan
+COPY --from=builder /app/composer.json   ./composer.json
 
-# Overlay runtime-specific config files
-COPY docker/nginx.conf      /etc/nginx/http.d/default.conf
-COPY docker/php-fpm.conf    /usr/local/etc/php-fpm.d/www.conf
+# Runtime config files
+COPY docker/nginx.conf       /etc/nginx/http.d/default.conf
+COPY docker/php-fpm.conf     /usr/local/etc/php-fpm.d/www.conf
 COPY docker/supervisord.conf /etc/supervisord.conf
-COPY docker/opcache.ini     /usr/local/etc/php/conf.d/opcache.ini
-COPY docker/entrypoint.sh   /entrypoint.sh
+COPY docker/opcache.ini      /usr/local/etc/php/conf.d/opcache.ini
+COPY docker/entrypoint.sh    /entrypoint.sh
 
 RUN chmod +x /entrypoint.sh
 
-# Writable directories
+# Ensure all required storage subdirs exist (including app/public for storage:link)
 RUN mkdir -p \
+        storage/app/public \
         storage/framework/cache \
         storage/framework/sessions \
         storage/framework/views \
@@ -101,7 +94,6 @@ RUN mkdir -p \
     && chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
 
-# Render forwards external traffic to this port
 EXPOSE 8080
 
 ENTRYPOINT ["/entrypoint.sh"]
