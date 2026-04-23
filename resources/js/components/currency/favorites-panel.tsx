@@ -62,11 +62,13 @@ export default function FavoritesPanel({
                                             }`}
                                         />
                                         <div>
-                                            <p className="text-sm font-semibold group-hover:text-primary transition-colors">
-                                                {favorite.baseCurrency}/
-                                                {favorite.quoteCurrency}
+                                            <p className="text-sm font-semibold transition-colors group-hover:text-primary">
+                                                {favorite.nickname ?? `${favorite.baseCurrency}/${favorite.quoteCurrency}`}
                                             </p>
                                             <p className="mt-0.5 text-xs text-muted-foreground">
+                                                {favorite.nickname
+                                                    ? `${favorite.baseCurrency}/${favorite.quoteCurrency} · `
+                                                    : ''}
                                                 Quick-load{' '}
                                                 {formatCurrency(
                                                     amount,

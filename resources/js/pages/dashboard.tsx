@@ -1,6 +1,6 @@
 import { Head } from '@inertiajs/react';
 import { useMutation } from '@tanstack/react-query';
-import { useCallback, useDeferredValue, useEffect, useMemo } from 'react';
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import ConverterPanel from '@/components/currency/converter-panel';
 import FavoritesPanel from '@/components/currency/favorites-panel';
@@ -98,6 +98,10 @@ export default function Dashboard({
         return () => window.clearTimeout(timeout);
     }, [baseCurrency, parsedAmount, persistPreferences, quoteCurrency]);
 
+    // nickname input state — shown in the converter panel before submitting
+    const [pendingNickname, setPendingNickname] = useState('');
+    const nicknameSaved = useRef(false);
+
     const saveFavoriteMutation = useMutation({
         mutationFn: async () => {
             const response = await api.post<{ favorite: FavoriteCurrencyPair }>(
@@ -105,6 +109,8 @@ export default function Dashboard({
                 {
                     baseCurrency,
                     quoteCurrency,
+                    nickname: pendingNickname.trim() || null,
+                    savedRate: rateQuery.data?.rate ?? null,
                 },
             );
 
@@ -121,9 +127,13 @@ export default function Dashboard({
                     : [...storedFavorites, favorite],
             );
 
-            toast.success(
-                `${favorite.baseCurrency}/${favorite.quoteCurrency} saved`,
-            );
+            const label = favorite.nickname
+                ? `"${favorite.nickname}" (${favorite.baseCurrency}/${favorite.quoteCurrency})`
+                : `${favorite.baseCurrency}/${favorite.quoteCurrency}`;
+
+            toast.success(`${label} saved to favorites`);
+            setPendingNickname('');
+            nicknameSaved.current = true;
         },
         onError: () => {
             toast.error('Could not save that favorite pair right now.');
@@ -227,6 +237,8 @@ export default function Dashboard({
                     isRateLoading={rateQuery.isFetching}
                     isRateError={rateQuery.isError}
                     isSavingFavorite={saveFavoriteMutation.isPending}
+                    nickname={pendingNickname}
+                    onNicknameChange={setPendingNickname}
                     onAddFavorite={() => saveFavoriteMutation.mutate()}
                     onAmountChange={setAmountInput}
                     onBaseCurrencyChange={setBaseCurrency}

@@ -14,16 +14,19 @@ class DashboardController extends Controller
         return Inertia::render('dashboard', [
             'favorites' => $request->user()
                 ->favoriteCurrencyPairs()
-                ->orderBy('base_currency')
-                ->orderBy('quote_currency')
+                ->orderBy('sort_order')
+                ->orderBy('id')
                 ->get()
                 ->map(fn ($favorite): array => [
-                    'id' => $favorite->id,
+                    'id'           => $favorite->id,
                     'baseCurrency' => $favorite->base_currency,
                     'quoteCurrency' => $favorite->quote_currency,
+                    'nickname'     => $favorite->nickname,
+                    'savedRate'    => $favorite->saved_rate,
+                    'sortOrder'    => $favorite->sort_order,
                 ]),
             'preferences' => CurrencyPreferences::fromRequest($request),
-            'currencies' => config('currency.supported'),
+            'currencies'  => config('currency.supported'),
         ]);
     }
 }

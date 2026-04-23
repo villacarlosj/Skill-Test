@@ -24,6 +24,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('api/currency/rates', CurrencyRateController::class)->name('api.currency.rates');
     Route::put('dashboard/preferences', [CurrencyPreferenceController::class, 'update'])->name('dashboard.preferences.update');
     Route::post('dashboard/favorites', [FavoriteCurrencyPairController::class, 'store'])->name('dashboard.favorites.store');
+    Route::put('dashboard/favorites/{favoriteCurrencyPair}', [FavoriteCurrencyPairController::class, 'update'])->name('dashboard.favorites.update');
+    Route::patch('dashboard/favorites/reorder', [FavoriteCurrencyPairController::class, 'reorder'])->name('dashboard.favorites.reorder');
     Route::delete('dashboard/favorites/{favoriteCurrencyPair}', [FavoriteCurrencyPairController::class, 'destroy'])->name('dashboard.favorites.destroy');
 });
 

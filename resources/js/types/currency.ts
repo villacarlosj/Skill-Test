@@ -7,6 +7,9 @@ export type FavoriteCurrencyPair = {
     id: number;
     baseCurrency: string;
     quoteCurrency: string;
+    nickname: string | null;
+    savedRate: number | null;
+    sortOrder: number;
 };
 
 export type RecentConversion = {

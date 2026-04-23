@@ -4,6 +4,7 @@ import {
     BookmarkPlus,
     RefreshCcw,
     Star,
+    Tag,
 } from 'lucide-react';
 import CurrencySelect from '@/components/currency/currency-select';
 import { Button } from '@/components/ui/button';
@@ -38,6 +39,8 @@ type ConverterPanelProps = {
     onSwap: () => void;
     isRateLoading: boolean;
     isRateError: boolean;
+    nickname: string;
+    onNicknameChange: (value: string) => void;
     providerQuotes: ProviderQuote[];
     quoteCurrency: string;
     rateResponse?: CurrencyRateResponse;
@@ -59,6 +62,8 @@ export default function ConverterPanel({
     onSwap,
     isRateLoading,
     isRateError,
+    nickname,
+    onNicknameChange,
     providerQuotes,
     quoteCurrency,
     rateResponse,
@@ -91,6 +96,22 @@ export default function ConverterPanel({
                             <RefreshCcw className="size-4" />
                             Save snapshot
                         </Button>
+
+                        {/* Nickname input — only visible when pair is not yet saved */}
+                        {!isFavorite && (
+                            <div className="relative flex items-center">
+                                <Tag className="absolute left-3 size-3.5 text-muted-foreground" />
+                                <Input
+                                    className="h-9 w-44 rounded-xl border-white/10 bg-white/5 pl-8 text-xs placeholder:text-muted-foreground/60"
+                                    maxLength={60}
+                                    onChange={(e) => onNicknameChange(e.target.value)}
+                                    placeholder='Label this pair… (optional)'
+                                    type="text"
+                                    value={nickname}
+                                />
+                            </div>
+                        )}
+
                         <Button
                             className="h-9 bg-primary text-primary-foreground hover:bg-primary/90"
                             disabled={isSavingFavorite || isFavorite}
