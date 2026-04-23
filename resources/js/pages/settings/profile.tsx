@@ -1,4 +1,5 @@
 import { Form, Head, Link, usePage } from '@inertiajs/react';
+import { useMemo, useState } from 'react';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import DeleteUser from '@/components/delete-user';
 import Heading from '@/components/heading';
@@ -6,17 +7,38 @@ import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { edit } from '@/routes/profile';
 import { send } from '@/routes/verification';
+
+type CountryOption = {
+    name: string;
+    currency: string;
+};
 
 export default function Profile({
     mustVerifyEmail,
     status,
+    countries,
 }: {
     mustVerifyEmail: boolean;
     status?: string;
+    countries: Record<string, CountryOption>;
 }) {
     const { auth } = usePage().props;
+    const countryEntries = useMemo(
+        () => Object.entries(countries).sort((a, b) =>
+            a[1].name.localeCompare(b[1].name),
+        ),
+        [countries],
+    );
+    const [countryCode, setCountryCode] = useState(auth.user.country_code ?? 'PH');
 
     return (
         <>
@@ -28,7 +50,7 @@ export default function Profile({
                 <Heading
                     variant="small"
                     title="Profile information"
-                    description="Update your name and email address"
+                    description="Update the details Ratehorse uses for your account and preferred market context"
                 />
 
                 <Form
@@ -40,22 +62,61 @@ export default function Profile({
                 >
                     {({ processing, errors }) => (
                         <>
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="first_name">
+                                        First name
+                                    </Label>
+                                    <Input
+                                        id="first_name"
+                                        className="mt-1 block w-full"
+                                        defaultValue={auth.user.first_name ?? ''}
+                                        name="first_name"
+                                        required
+                                        autoComplete="given-name"
+                                        placeholder="First name"
+                                    />
+                                    <InputError
+                                        className="mt-2"
+                                        message={errors.first_name}
+                                    />
+                                </div>
+
+                                <div className="grid gap-2">
+                                    <Label htmlFor="last_name">
+                                        Last name
+                                    </Label>
+                                    <Input
+                                        id="last_name"
+                                        className="mt-1 block w-full"
+                                        defaultValue={auth.user.last_name ?? ''}
+                                        name="last_name"
+                                        required
+                                        autoComplete="family-name"
+                                        placeholder="Last name"
+                                    />
+                                    <InputError
+                                        className="mt-2"
+                                        message={errors.last_name}
+                                    />
+                                </div>
+                            </div>
+
                             <div className="grid gap-2">
-                                <Label htmlFor="name">Name</Label>
-
+                                <Label htmlFor="middle_name">
+                                    Middle name
+                                </Label>
                                 <Input
-                                    id="name"
+                                    id="middle_name"
                                     className="mt-1 block w-full"
-                                    defaultValue={auth.user.name}
-                                    name="name"
-                                    required
-                                    autoComplete="name"
-                                    placeholder="Full name"
+                                    defaultValue={auth.user.middle_name ?? ''}
+                                    name="middle_name"
+                                    autoComplete="additional-name"
+                                    placeholder="Optional"
                                 />
-
                                 <InputError
                                     className="mt-2"
-                                    message={errors.name}
+                                    message={errors.middle_name}
                                 />
                             </div>
 
@@ -77,6 +138,68 @@ export default function Profile({
                                     className="mt-2"
                                     message={errors.email}
                                 />
+                            </div>
+
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="phone_number">
+                                        Phone number
+                                    </Label>
+                                    <Input
+                                        id="phone_number"
+                                        type="tel"
+                                        className="mt-1 block w-full"
+                                        defaultValue={
+                                            auth.user.phone_number ?? ''
+                                        }
+                                        name="phone_number"
+                                        required
+                                        autoComplete="tel"
+                                        placeholder="+63 917 123 4567"
+                                    />
+                                    <InputError
+                                        className="mt-2"
+                                        message={errors.phone_number}
+                                    />
+                                </div>
+
+                                <div className="grid gap-2">
+                                    <Label htmlFor="country_code">
+                                        Country
+                                    </Label>
+                                    <input
+                                        type="hidden"
+                                        name="country_code"
+                                        value={countryCode}
+                                    />
+                                    <Select
+                                        value={countryCode}
+                                        onValueChange={setCountryCode}
+                                    >
+                                        <SelectTrigger
+                                            id="country_code"
+                                            className="w-full"
+                                        >
+                                            <SelectValue placeholder="Select a country" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {countryEntries.map(
+                                                ([code, country]) => (
+                                                    <SelectItem
+                                                        key={code}
+                                                        value={code}
+                                                    >
+                                                        {country.name}
+                                                    </SelectItem>
+                                                ),
+                                            )}
+                                        </SelectContent>
+                                    </Select>
+                                    <InputError
+                                        className="mt-2"
+                                        message={errors.country_code}
+                                    />
+                                </div>
                             </div>
 
                             {mustVerifyEmail &&

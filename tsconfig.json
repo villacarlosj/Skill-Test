@@ -109,7 +109,19 @@
         "skipLibCheck": true /* Skip type checking all .d.ts files. */,
         "baseUrl": ".",
         "paths": {
-            "@/*": ["./resources/js/*"]
+            "@/*": ["./resources/js/*"],
+            "@/routes": ["./resources/js/routes/index.ts"],
+            "@/routes/*": [
+                "./resources/js/routes/*",
+                "./resources/js/routes/*/index.ts"
+            ],
+            "@/routes/appearance": ["./resources/js/routes/appearance/index.ts"],
+            "@/routes/login": ["./resources/js/routes/login/index.ts"],
+            "@/routes/password": ["./resources/js/routes/password/index.ts"],
+            "@/routes/profile": ["./resources/js/routes/profile/index.ts"],
+            "@/routes/register": ["./resources/js/routes/register/index.ts"],
+            "@/routes/security": ["./resources/js/routes/security/index.ts"],
+            "@/routes/verification": ["./resources/js/routes/verification/index.ts"]
         },
         "jsx": "react-jsx"
     },

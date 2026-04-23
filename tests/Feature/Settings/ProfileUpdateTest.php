@@ -18,8 +18,12 @@ test('profile information can be updated', function () {
     $response = $this
         ->actingAs($user)
         ->patch(route('profile.update'), [
-            'name' => 'Test User',
+            'first_name' => 'Jeskin',
+            'middle_name' => 'Mesa',
+            'last_name' => 'Villacarlos',
             'email' => 'test@example.com',
+            'phone_number' => '(0917) 123-4567',
+            'country_code' => 'PH',
         ]);
 
     $response
@@ -28,8 +32,13 @@ test('profile information can be updated', function () {
 
     $user->refresh();
 
-    expect($user->name)->toBe('Test User');
+    expect($user->name)->toBe('Jeskin Mesa Villacarlos');
+    expect($user->first_name)->toBe('Jeskin');
+    expect($user->middle_name)->toBe('Mesa');
+    expect($user->last_name)->toBe('Villacarlos');
     expect($user->email)->toBe('test@example.com');
+    expect($user->phone_number)->toBe('09171234567');
+    expect($user->country_code)->toBe('PH');
     expect($user->email_verified_at)->toBeNull();
 });
 
@@ -39,8 +48,12 @@ test('email verification status is unchanged when the email address is unchanged
     $response = $this
         ->actingAs($user)
         ->patch(route('profile.update'), [
-            'name' => 'Test User',
+            'first_name' => $user->first_name,
+            'middle_name' => $user->middle_name,
+            'last_name' => $user->last_name,
             'email' => $user->email,
+            'phone_number' => $user->phone_number,
+            'country_code' => $user->country_code,
         ]);
 
     $response

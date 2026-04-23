@@ -19,15 +19,22 @@ class CreateNewUser implements CreatesNewUsers
      */
     public function create(array $input): User
     {
-        Validator::make($input, [
+        $normalizedInput = $this->normalizeProfileInput($input);
+
+        Validator::make($normalizedInput, [
             ...$this->profileRules(),
             'password' => $this->passwordRules(),
         ])->validate();
 
         return User::create([
-            'name' => $input['name'],
-            'email' => $input['email'],
-            'password' => $input['password'],
+            'name' => $normalizedInput['name'],
+            'first_name' => $normalizedInput['first_name'],
+            'middle_name' => $normalizedInput['middle_name'],
+            'last_name' => $normalizedInput['last_name'],
+            'email' => $normalizedInput['email'],
+            'phone_number' => $normalizedInput['phone_number'],
+            'country_code' => $normalizedInput['country_code'],
+            'password' => $normalizedInput['password'],
         ]);
     }
 }

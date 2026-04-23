@@ -22,6 +22,7 @@ class ProfileController extends Controller
         return Inertia::render('settings/profile', [
             'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
             'status' => $request->session()->get('status'),
+            'countries' => config('currency.countries'),
         ]);
     }
 
@@ -31,6 +32,7 @@ class ProfileController extends Controller
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
         $request->user()->fill($request->validated());
+        $request->user()->name = $request->string('name')->toString();
 
         if ($request->user()->isDirty('email')) {
             $request->user()->email_verified_at = null;
