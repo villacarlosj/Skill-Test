@@ -18,18 +18,24 @@ COPY --from=composer:2.8 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /app
 
-# ── PHP deps (ignore platform reqs — lock was generated on Windows) ───────────
+# ── PHP deps ──────────────────────────────────────────────────────────────────
 COPY composer.json composer.lock ./
-RUN composer install \
+RUN COMPOSER_MEMORY_LIMIT=-1 composer install \
     --no-dev \
     --no-scripts \
     --no-interaction \
     --prefer-dist \
-    --optimize-autoloader \
     --ignore-platform-reqs
 
 # ── Copy full source ──────────────────────────────────────────────────────────
 COPY . .
+
+# Optimize autoloader NOW that app source exists
+RUN COMPOSER_MEMORY_LIMIT=-1 composer dump-autoload \
+    --optimize \
+    --no-dev \
+    --ignore-platform-reqs
+
 
 # ── Bootstrap for artisan ─────────────────────────────────────────────────────
 # Use a throw-away key so artisan can boot — Render's real APP_KEY is used at runtime
